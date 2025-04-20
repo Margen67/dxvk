@@ -4197,7 +4197,7 @@ namespace dxvk {
       const Com<D3D9Surface> surface = new D3D9Surface(this, &desc, IsExtended(), nullptr, pSharedHandle);
       m_initializer->InitTexture(surface->GetCommonTexture());
       *ppSurface = surface.ref();
-      
+
       if (desc.Pool == D3DPOOL_DEFAULT)
         m_losableResourceCounter++;
 
@@ -4442,7 +4442,7 @@ namespace dxvk {
           DWORD                      Stage,
           D3D9TextureStageStateTypes Type,
           DWORD                      Value) {
-    
+
     // Clamp values instead of checking and returning INVALID_CALL
     // Matches tests + Dawn of Magic 2 relies on it.
     Stage = std::min(Stage, DWORD(caps::TextureStageCount - 1));
@@ -7115,7 +7115,7 @@ namespace dxvk {
         lodBias += m_d3d9Options.samplerLodBias;
 
         if (m_d3d9Options.clampNegativeLodBias)
-          lodBias = std::max(lodBias, 0.0f);
+          lodBias = 0.0f;
 
         key.setLodRange(float(cState.maxMipLevel), 16.0f, lodBias);
       }
