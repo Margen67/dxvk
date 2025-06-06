@@ -792,13 +792,8 @@ namespace dxvk {
     moduleInfo.tess    = nullptr;
     moduleInfo.xfb     = nullptr;
 
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_VERTEX_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_VERTEX_BIT,
+      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
     
     if (FAILED(hr))
       return hr;
@@ -824,13 +819,8 @@ namespace dxvk {
     moduleInfo.tess    = nullptr;
     moduleInfo.xfb     = nullptr;
 
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_GEOMETRY_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_GEOMETRY_BIT,
+      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
 
     if (FAILED(hr))
       return hr;
@@ -898,37 +888,15 @@ namespace dxvk {
     
     if (RasterizedStream != D3D11_SO_NO_RASTERIZED_STREAM)
       Logger::err("D3D11: CreateGeometryShaderWithStreamOutput: Rasterized stream not supported");
-    
-    // Compute hash from both the xfb info and the source
-    // code, because both influence the generated code
-    DxbcXfbInfo hashXfb = xfb;
 
-    std::vector<Sha1Data> chunks = {{
-      { pShaderBytecode, BytecodeLength  },
-      { &hashXfb,        sizeof(hashXfb) },
-    }};
-
-    for (uint32_t i = 0; i < hashXfb.entryCount; i++) {
-      const char* semantic = hashXfb.entries[i].semanticName;
-
-      if (semantic) {
-        chunks.push_back({ semantic, std::strlen(semantic) });
-        hashXfb.entries[i].semanticName = nullptr;
-      }
-    }
-
-    Sha1Hash hash = Sha1Hash::compute(chunks.size(), chunks.data());
-    
     // Create the actual shader module
     DxbcModuleInfo moduleInfo;
     moduleInfo.options = m_dxbcOptions;
     moduleInfo.tess    = nullptr;
     moduleInfo.xfb     = &xfb;
     
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_GEOMETRY_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_GEOMETRY_BIT,
+      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
 
     if (FAILED(hr))
       return E_INVALIDARG;
@@ -954,14 +922,8 @@ namespace dxvk {
     moduleInfo.tess    = nullptr;
     moduleInfo.xfb     = nullptr;
 
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_FRAGMENT_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_FRAGMENT_BIT,
+      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
 
     if (FAILED(hr))
       return hr;
@@ -993,11 +955,7 @@ namespace dxvk {
     if (tessInfo.maxTessFactor >= 8.0f)
       moduleInfo.tess = &tessInfo;
 
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, hash),
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
       pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
 
     if (FAILED(hr))
@@ -1024,11 +982,7 @@ namespace dxvk {
     moduleInfo.tess    = nullptr;
     moduleInfo.xfb     = nullptr;
 
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, hash),
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
       pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
 
     if (FAILED(hr))
@@ -1055,13 +1009,8 @@ namespace dxvk {
     moduleInfo.tess    = nullptr;
     moduleInfo.xfb     = nullptr;
 
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_COMPUTE_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
+    HRESULT hr = CreateShaderModule(&module, VK_SHADER_STAGE_COMPUTE_BIT,
+      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
 
     if (FAILED(hr))
       return hr;
@@ -1899,12 +1848,6 @@ namespace dxvk {
   D3D_FEATURE_LEVEL D3D11Device::GetMaxFeatureLevel(
     const Rc<DxvkInstance>& Instance,
     const Rc<DxvkAdapter>&  Adapter) {
-    // Check whether baseline features are supported by the device    
-    DxvkDeviceFeatures features = GetDeviceFeatures(Adapter);
-    
-    if (!Adapter->checkFeatureSupport(features))
-      return D3D_FEATURE_LEVEL();
-
     // The feature level override always takes precedence
     static const std::array<std::pair<std::string, D3D_FEATURE_LEVEL>, 9> s_featureLevels = {{
       { "12_1", D3D_FEATURE_LEVEL_12_1 },
@@ -1933,87 +1876,65 @@ namespace dxvk {
   }
   
   
-  DxvkDeviceFeatures D3D11Device::GetDeviceFeatures(
-    const Rc<DxvkAdapter>&  Adapter) {
-    DxvkDeviceFeatures supported = Adapter->features();
-    DxvkDeviceFeatures enabled   = {};
+  DxvkShaderKey D3D11Device::ComputeShaderKey(
+          VkShaderStageFlagBits   ShaderStage,
+    const void*                   pShaderBytecode,
+          size_t                  BytecodeLength,
+    const DxbcModuleInfo*         pModuleInfo) {
+    constexpr static uint32_t Md5Size = 16;
 
-    // Required for feature level 10_1
-    enabled.core.features.depthBiasClamp                          = VK_TRUE;
-    enabled.core.features.depthClamp                              = VK_TRUE;
-    enabled.core.features.dualSrcBlend                            = VK_TRUE;
-    enabled.core.features.fillModeNonSolid                        = VK_TRUE;
-    enabled.core.features.fullDrawIndexUint32                     = VK_TRUE;
-    enabled.core.features.geometryShader                          = VK_TRUE;
-    enabled.core.features.imageCubeArray                          = VK_TRUE;
-    enabled.core.features.independentBlend                        = VK_TRUE;
-    enabled.core.features.multiViewport                           = VK_TRUE;
-    enabled.core.features.occlusionQueryPrecise                   = VK_TRUE;
-    enabled.core.features.pipelineStatisticsQuery                 = supported.core.features.pipelineStatisticsQuery;
-    enabled.core.features.sampleRateShading                       = VK_TRUE;
-    enabled.core.features.samplerAnisotropy                       = supported.core.features.samplerAnisotropy;
-    enabled.core.features.shaderClipDistance                      = VK_TRUE;
-    enabled.core.features.shaderCullDistance                      = VK_TRUE;
-    enabled.core.features.shaderImageGatherExtended               = VK_TRUE;
-    enabled.core.features.textureCompressionBC                    = VK_TRUE;
+    // DXBC shaders store an MD5 hash within their header, so just
+    // use that instead of running SHA-1 over the entire binary.
+    Sha1Digest digest = { };
 
-    enabled.vk12.samplerMirrorClampToEdge                         = VK_TRUE;
+    if (BytecodeLength >= Md5Size + 4u)
+      std::memcpy(&digest[0], reinterpret_cast<const char*>(pShaderBytecode) + 4, Md5Size);
 
-    enabled.vk13.shaderDemoteToHelperInvocation                   = VK_TRUE;
+    uint32_t metadata = uint32_t(ShaderStage) | (uint32_t(BytecodeLength) << 8u);
+    std::memcpy(&digest[Md5Size], &metadata, sizeof(metadata));
 
-    enabled.extCustomBorderColor.customBorderColors               = supported.extCustomBorderColor.customBorderColorWithoutFormat;
-    enabled.extCustomBorderColor.customBorderColorWithoutFormat   = supported.extCustomBorderColor.customBorderColorWithoutFormat;
+    // If transform feedback is enabled, hash that state too since it
+    // affects the generated shader code, and factor it into the key.
+    if (pModuleInfo && pModuleInfo->xfb) {
+      std::vector<unsigned char> serialized;
 
-    enabled.extTransformFeedback.transformFeedback                = VK_TRUE;
-    enabled.extTransformFeedback.geometryStreams                  = VK_TRUE;
+      serialized.push_back(pModuleInfo->xfb->entryCount);
 
-    enabled.extVertexAttributeDivisor.vertexAttributeInstanceRateDivisor      = supported.extVertexAttributeDivisor.vertexAttributeInstanceRateDivisor;
-    enabled.extVertexAttributeDivisor.vertexAttributeInstanceRateZeroDivisor  = supported.extVertexAttributeDivisor.vertexAttributeInstanceRateZeroDivisor;
+      for (uint32_t i = 0; i < pModuleInfo->xfb->entryCount; i++) {
+        if (pModuleInfo->xfb->entries[i].semanticName) {
+          for (uint32_t j = 0; pModuleInfo->xfb->entries[i].semanticName[j]; j++)
+            serialized.push_back(pModuleInfo->xfb->entries[i].semanticName[j]);
+        }
 
-    // Required for Feature Level 11_0
-    enabled.core.features.drawIndirectFirstInstance               = supported.core.features.drawIndirectFirstInstance;
-    enabled.core.features.fragmentStoresAndAtomics                = supported.core.features.fragmentStoresAndAtomics;
-    enabled.core.features.tessellationShader                      = supported.core.features.tessellationShader;
+        serialized.push_back(pModuleInfo->xfb->entries[i].semanticIndex);
+        serialized.push_back(pModuleInfo->xfb->entries[i].componentIndex);
+        serialized.push_back(pModuleInfo->xfb->entries[i].componentCount);
+        serialized.push_back(pModuleInfo->xfb->entries[i].streamId);
+        serialized.push_back(pModuleInfo->xfb->entries[i].bufferId);
+        serialized.push_back(pModuleInfo->xfb->entries[i].offset);
+        serialized.push_back(pModuleInfo->xfb->entries[i].offset >> 8u);
+      }
 
-    // Required for Feature Level 11_1
-    enabled.core.features.logicOp                                 = supported.core.features.logicOp;
-    enabled.core.features.vertexPipelineStoresAndAtomics          = supported.core.features.vertexPipelineStoresAndAtomics;
+      for (uint32_t i = 0; i < 4u; i++) {
+        serialized.push_back(pModuleInfo->xfb->strides[i]);
+        serialized.push_back(pModuleInfo->xfb->strides[i] >> 8u);
+      }
 
-    // Required for Feature Level 12_0
-    enabled.core.features.sparseBinding                           = supported.core.features.sparseBinding;
-    enabled.core.features.sparseResidencyBuffer                   = supported.core.features.sparseResidencyBuffer;
-    enabled.core.features.sparseResidencyImage2D                  = supported.core.features.sparseResidencyImage2D;
-    enabled.core.features.sparseResidencyImage3D                  = supported.core.features.sparseResidencyImage3D;
-    enabled.core.features.sparseResidency2Samples                 = supported.core.features.sparseResidency2Samples;
-    enabled.core.features.sparseResidency4Samples                 = supported.core.features.sparseResidency4Samples;
-    enabled.core.features.sparseResidency8Samples                 = supported.core.features.sparseResidency8Samples;
-    enabled.core.features.sparseResidency16Samples                = supported.core.features.sparseResidency16Samples;
-    enabled.core.features.sparseResidencyAliased                  = supported.core.features.sparseResidencyAliased;
-    enabled.core.features.shaderResourceResidency                 = supported.core.features.shaderResourceResidency;
-    enabled.core.features.shaderResourceMinLod                    = supported.core.features.shaderResourceMinLod;
-    enabled.vk12.samplerFilterMinmax                              = supported.vk12.samplerFilterMinmax;
+      serialized.push_back(pModuleInfo->xfb->rasterizedStream);
 
-    // Required for Feature Level 12_1
-    enabled.extFragmentShaderInterlock.fragmentShaderSampleInterlock = supported.extFragmentShaderInterlock.fragmentShaderSampleInterlock;
-    enabled.extFragmentShaderInterlock.fragmentShaderPixelInterlock  = supported.extFragmentShaderInterlock.fragmentShaderPixelInterlock;
+      Sha1Digest xfbDigest = Sha1Hash::compute(serialized.data(), serialized.size()).digest();
 
-    // Optional in any feature level
-    enabled.core.features.depthBounds                             = supported.core.features.depthBounds;
-    enabled.core.features.shaderFloat64                           = supported.core.features.shaderFloat64;
-    enabled.core.features.shaderInt64                             = supported.core.features.shaderInt64;
+      for (size_t i = 0; i < xfbDigest.size(); i++)
+        digest[i] ^= xfbDigest[i];
+    }
 
-    // Depth bias control
-    enabled.extDepthBiasControl.depthBiasControl                                = supported.extDepthBiasControl.depthBiasControl;
-    enabled.extDepthBiasControl.depthBiasExact                                  = supported.extDepthBiasControl.depthBiasExact;
-    enabled.extDepthBiasControl.leastRepresentableValueForceUnormRepresentation = supported.extDepthBiasControl.leastRepresentableValueForceUnormRepresentation;
-
-    return enabled;
+    return DxvkShaderKey(ShaderStage, Sha1Hash(digest));
   }
-  
-  
+
+
   HRESULT D3D11Device::CreateShaderModule(
           D3D11CommonShader*      pShaderModule,
-          DxvkShaderKey           ShaderKey,
+          VkShaderStageFlagBits   ShaderStage,
     const void*                   pShaderBytecode,
           size_t                  BytecodeLength,
           ID3D11ClassLinkage*     pClassLinkage,
@@ -2024,10 +1945,12 @@ namespace dxvk {
     if (pClassLinkage != nullptr)
       Logger::warn("D3D11Device::CreateShaderModule: Class linkage not supported");
 
+    DxvkShaderKey shaderKey = ComputeShaderKey(ShaderStage, pShaderBytecode, BytecodeLength, pModuleInfo);
+
     D3D11CommonShader commonShader;
 
     HRESULT hr = m_shaderModules.GetShaderModule(this,
-      &ShaderKey, pModuleInfo, pShaderBytecode, BytecodeLength,
+      &shaderKey, pModuleInfo, pShaderBytecode, BytecodeLength,
       &commonShader);
 
     if (FAILED(hr))
@@ -2466,6 +2389,38 @@ namespace dxvk {
   }
 
 
+  bool D3D11Device::LockImage(
+    const Rc<DxvkImage>&            Image,
+          VkImageUsageFlags         Usage) {
+    bool feedback = false;
+
+    auto chunk = AllocCsChunk(DxvkCsChunkFlag::SingleUse);
+
+    chunk->push([
+      cImage  = Image,
+      cUsage  = Usage,
+      &feedback
+    ] (DxvkContext* ctx) {
+      DxvkImageUsageInfo usageInfo;
+      usageInfo.usage = cUsage;
+      usageInfo.stableGpuAddress = VK_TRUE;
+
+      feedback = ctx->ensureImageCompatibility(cImage, usageInfo);
+    });
+
+    m_context->InjectCsChunk(DxvkCsQueue::HighPriority, std::move(chunk), true);
+
+    if (!feedback) {
+      Logger::err(str::format("Failed to lock image:"
+        "\n  Image format:  ", Image->info().format,
+        "\n  Image usage:   ", std::hex, Image->info().usage,
+        "\n  Desired usage: ", std::hex, Usage));
+    }
+
+    return feedback;
+  }
+
+
 
   D3D11DeviceExt::D3D11DeviceExt(
           D3D11DXGIDevice*        pContainer,
@@ -2514,8 +2469,7 @@ namespace dxvk {
         return deviceFeatures.nvxImageViewHandle;
 
       case D3D11_VK_NVX_BINARY_IMPORT:
-        return deviceFeatures.nvxBinaryImport
-            && deviceFeatures.vk12.bufferDeviceAddress;
+        return deviceFeatures.nvxBinaryImport;
 
       default:
         return false;
@@ -2548,7 +2502,7 @@ namespace dxvk {
 
     VkImageViewHandleInfoNVX imageViewHandleInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX };
     imageViewHandleInfo.imageView = pIV->handle();
-    imageViewHandleInfo.sampler = pDSS->handle();
+    imageViewHandleInfo.sampler = pDSS->getDescriptor().samplerObject;
     imageViewHandleInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
     // note: there's no implicit lifetime management here; it's up to the
@@ -2655,7 +2609,7 @@ namespace dxvk {
       Rc<DxvkBuffer> dxvkBuffer = GetCommonBuffer(pResource)->GetBuffer();
       LockBuffer(dxvkBuffer);
 
-      *gpuVAStart = dxvkBuffer->gpuAddress();
+      *gpuVAStart = dxvkBuffer->getSliceInfo().gpuAddress;
       *gpuVASize = dxvkBuffer->info().size;
     } else {
       Logger::warn(str::format("GetResourceHandleGPUVirtualAddressAndSize(): Unsupported resource type: ", resourceDesc.Dim));
@@ -2813,32 +2767,7 @@ namespace dxvk {
     if (!Image->canRelocate() && (Image->info().usage & Usage))
       return true;
 
-    bool feedback = false;
-
-    auto chunk = m_device->AllocCsChunk(DxvkCsChunkFlag::SingleUse);
-
-    chunk->push([
-      cImage  = Image,
-      cUsage  = Usage,
-      &feedback
-    ] (DxvkContext* ctx) {
-      DxvkImageUsageInfo usageInfo;
-      usageInfo.usage = cUsage;
-      usageInfo.stableGpuAddress = VK_TRUE;
-
-      feedback = ctx->ensureImageCompatibility(cImage, usageInfo);
-    });
-
-    m_device->GetContext()->InjectCsChunk(DxvkCsQueue::HighPriority, std::move(chunk), true);
-
-    if (!feedback) {
-      Logger::err(str::format("Failed to lock image:"
-        "\n  Image format:  ", Image->info().format,
-        "\n  Image usage:   ", std::hex, Image->info().usage,
-        "\n  Desired usage: ", std::hex, Usage));
-    }
-
-    return feedback;
+    return m_device->LockImage(Image, Usage);
   }
 
 

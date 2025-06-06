@@ -697,12 +697,12 @@ namespace dxvk {
       return m_dxvkDevice->getShaderPipelineStages();
     }
 
-    static DxvkDeviceFeatures GetDeviceFeatures(const Rc<DxvkAdapter>& adapter);
-
     /**
      * \brief Returns whether the Vulkan device supports the required features for ProcessVertices
      */
     bool SupportsSWVP();
+
+    bool SupportsVCacheQuery() const;
 
     bool IsExtended();
 
@@ -900,11 +900,7 @@ namespace dxvk {
 
     void BindViewportAndScissor();
 
-    inline bool IsAlphaToCoverageEnabled() {
-      const bool alphaTest = m_state.renderStates[D3DRS_ALPHATESTENABLE] != 0;
-
-      return (m_amdATOC || (m_nvATOC && alphaTest)) && m_flags.test(D3D9DeviceFlag::ValidSampleMask);
-    }
+    bool IsAlphaToCoverageEnabled() const;
 
     inline bool IsDepthBiasEnabled() {
       const auto& rs = m_state.renderStates;
